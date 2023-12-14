@@ -838,9 +838,27 @@ class TestDatetimePlotting:
     @pytest.mark.xfail(reason="Test for violinplot not written yet")
     @mpl.style.context("default")
     def test_violinplot(self):
+        np.random.seed(42)
+        n_samples = 100
+        dates = [datetime.datetime(2023, 1, 1) + timedelta(days=np.random.randint(1, 30))
+                 for _ in range(n_samples)]
+        values = np.random.randn(n_samples)
+        min_length = min(len(dates), len(values))
+        dates = dates[:min_length]
+        values = values[:min_length]
         fig, ax = plt.subplots()
-        ax.violinplot(...)
-
+        positions = np.arange(len(dates))
+        result = ax.violinplot(values, positions=positions, widths=0.7, showmeans=True, showextrema=True)
+        assert result is not None, "Failed to create violin plot"
+        for pos, date in zip(result['bodies'], dates):
+            assert pos.get_paths()[0].vertices[0, 0] == mpl.dates.date2num(
+                date), "Violin position does not match date"
+        ax.set_title('Violin Plot with DateTime and Timedelta Positions')
+        ax.set_xticks(positions)
+        ax.set_xticklabels([date.strftime('%Y-%m-%d') for date in dates], rotation=45, ha='right')
+        ax.set_xlabel('Dates')
+        ax.set_ylabel('Values')
+    
     @mpl.style.context("default")
     def test_vlines(self):
         mpl.rcParams["date.converter"] = 'concise'
